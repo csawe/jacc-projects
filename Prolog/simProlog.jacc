@@ -1,0 +1,144 @@
+// To compile and run this program using jacc and Sun's JDK:
+//
+//    jacc simProlog.jacc
+//    javac Prolog.java PrologTokens.java
+//    java  Prolog
+//     ... enter prolog syntax ... hit EOF to terminate
+//
+
+%class     Prolog
+%interface PrologTokens
+%semantic  char : yylval
+%get       token
+%next      yylex()
+
+%token identifier 'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j' 'k' 'l' 'm' 'n' 'o' 'p' 'q' 'r' 's' 't' 'u' 'v' 'w' 'x' 'y' 'z' 'A' 'B' 'C' 'D' 'E' 'F' 'G' 'H' 'I' 'J' 'K' 'L' 'M' 'N' 'O' 'P' 'Q' 'R' 'S' 'T' 'U' 'V' 'W' 'X' 'Y' 'Z'
+%token variable 'A' 'B' 'C' 'D' 'E' 'F' 'G' 'H' 'I' 'J' 'K' 'L' 'M' 'N' 'O' 'P' 'Q' 'R' 'S' 'T' 'U' 'V' 'W' 'X' 'Y' 'Z'
+
+%token <LPAREN> '('
+%token <RPAREN> ')'
+%token <COMMA> ','
+%token <DOT> '.'
+%token <COLON> ':'
+%token <DASH> '-'
+
+
+%%  
+program : program '.'  clause { System.out.println("Accepted"); }
+        | clause { System.out.println("Accepted"); }
+        ;
+clause  : fact
+        | rule
+        ;
+fact    : predicate
+        ;
+rule    : predicate ':' '-' body
+        ;
+body    : predicate
+        | body separator body
+        | '(' body ')'
+        ;
+separator : ','
+        | ';'
+        ;
+predicate : IDENTIFIER
+          | IDENTIFIER '(' arguements ')'
+          ;
+arguements : arguement
+           | arguements ',' arguement
+           | /* empty */
+           ;
+arguement : VARIABLE
+           | predicate
+           ;
+VARIABLE   : variable
+           | VARIABLE IDENTIFIER
+           ;
+IDENTIFIER : identifier
+           | IDENTIFIER identifier
+           | identifier VARIABLE
+           ;
+
+%%
+
+  private void yyerror(String msg) {
+    System.out.println("ERROR: " + msg);
+    System.exit(1);
+  }
+
+  private int c;
+
+  /** Read a single input character from standard input.
+   */
+  private void nextChar() {
+    try {
+      c = System.in.read();
+    } catch (Exception e) {
+      c = (-1);
+    }
+  }
+
+  int token;
+  char yylval;
+
+  /** Read the next token and return the
+   *  corresponding integer code.
+   */
+  int yylex() {
+    for (;;){
+      // Skipping whitespace
+      while ( c==' ' || c=='\n' || c=='\t' || c=='\r' ){
+        nextChar();
+      }
+      if (c<0){
+        return (token=ENDINPUT);
+      }
+      switch(c){
+        case ',' :
+          nextChar();
+          return token=',';
+        case ':' :
+          nextChar();
+          return token=':';
+        case '-' :
+          nextChar();
+          return token='-';
+        case '(' :
+          nextChar();
+          return token='(';
+        case ')' :
+          nextChar();
+          return token=')';
+        case '?' :
+          nextChar();
+          return token='?';
+        case '"' :
+          nextChar();
+          return token='"';
+        case '.' :
+          nextChar();
+          return token='.';
+        case ';' :
+          nextChar();
+          return token=';';
+        default: 
+          if (Character.isUpperCase((char)c)) {
+              nextChar();
+              return token=(char)variable;
+          } else if (Character.isLowerCase((char)c)){
+              nextChar();
+              return token=(char)identifier;
+          } else {
+            yyerror("Illegal character " + (char)c);
+            nextChar();
+          }
+      }
+    }
+  }
+
+  public static void main(String[] args) {
+    Prolog prolog = new Prolog();
+    prolog.nextChar(); // prime the character input stream
+    prolog.yylex();    // prime the token input stream
+    prolog.parse();    // parse the input
+  }
